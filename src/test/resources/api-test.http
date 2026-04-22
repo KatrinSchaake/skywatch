@@ -1,0 +1,12 @@
+### GET request to example server
+GET localhost:8080/api/health
+
+###
+
+### GET request for all tracked objects
+GET localhost:8080/api/tracked-objects
+
+###
+
+### GET request for single tracked object
+GET localhost:8080/api/tracked-objects/1
