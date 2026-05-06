@@ -35,4 +35,9 @@ public class TrackedObjectController {
 				.filter(TrackedObject::isPotentiallyHazardous)
 				.toList();
 	}
+
+	@GetMapping("/count")
+	public int getCount() {
+		return this.trackedObjects.size();
+	}
 }

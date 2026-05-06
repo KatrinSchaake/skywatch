@@ -1,12 +1,20 @@
-### GET request to example server
+### Health Check
 GET localhost:8080/api/health
 
-###
+### TrackedObjects by ID
+GET localhost:8080/api/tracked-objects/2
 
 ### GET request for all tracked objects
 GET localhost:8080/api/tracked-objects
 
-###
+### only hazardous objects
+GET http://localhost:8080/api/tracked-objects/hazardous
 
 ### GET request for single tracked object
 GET localhost:8080/api/tracked-objects/1
+
+### GET count tracked-objects
+GET http://localhost:8080/api/tracked-objects/count
+
+### GET info-text
+GET http://localhost:8080/api/info
