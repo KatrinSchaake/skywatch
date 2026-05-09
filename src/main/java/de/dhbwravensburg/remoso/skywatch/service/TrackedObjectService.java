@@ -58,6 +58,17 @@ public class TrackedObjectService {
 		return Optional.of(entity);
 	}
 
+	public Optional<TrackedObject> toggleHazardous(Long id) {
+		Optional<TrackedObject> existing = findById(id);
+		if (existing.isEmpty()){
+			return Optional.empty();
+		}
+		TrackedObject entity = existing.get();
+		entity.setPotentiallyHazardous(!entity.isPotentiallyHazardous());  // das ist der Toggle "!"
+		store.put(id, entity);		// speichern (technisch nicht notwendig, aber sicherer)
+		return Optional.of(entity);
+	}
+
 	public boolean delete(Long id){
 		return store.remove(id) != null;
 	}

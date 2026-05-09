@@ -10,6 +10,12 @@ GET localhost:8080/api/tracked-objects
 ### GET only hazardous objects
 GET http://localhost:8080/api/tracked-objects/hazardous
 
+### GET Filter: nur gefährliche
+GET localhost:8080/api/tracked-objects?hazardous=true
+
+### GET Filter: nur ungefährliche
+GET localhost:8080/api/tracked-objects?hazardous=false
+
 ### GET by ID (404)
 GET localhost:8080/api/tracked-objects/999
 
@@ -43,5 +49,14 @@ Content-Type: application/json
   "missDistanceKm": 26000000.0
 }
 
-### DELETE
-DELETE http://localhost:8080/api/tracked-objects/2
+### DELETE noch-da Objekt - 204 (1. Aufruf)
+DELETE http://localhost:8080/api/tracked-objects/3
+
+### DELETE nicht-mehr-da Objekt - 404 (2. Aufruf)
+DELETE http://localhost:8080/api/tracked-objects/3
+
+### PATCH - Hazardous-Status umschalten (1. Aufruf)
+PATCH http://localhost:8080/api/tracked-objects/1/hazardous
+
+### PATCH - Hazardous-Status umschalten (2. Aufruf)
+PATCH http://localhost:8080/api/tracked-objects/1/hazardous
