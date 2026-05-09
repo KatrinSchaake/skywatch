@@ -1,20 +1,47 @@
 ### Health Check
 GET localhost:8080/api/health
 
-### TrackedObjects by ID
+### GET TrackedObjects by ID
 GET localhost:8080/api/tracked-objects/2
 
 ### GET request for all tracked objects
 GET localhost:8080/api/tracked-objects
 
-### only hazardous objects
+### GET only hazardous objects
 GET http://localhost:8080/api/tracked-objects/hazardous
 
-### GET request for single tracked object
-GET localhost:8080/api/tracked-objects/1
+### GET by ID (404)
+GET localhost:8080/api/tracked-objects/999
 
 ### GET count tracked-objects
 GET http://localhost:8080/api/tracked-objects/count
 
 ### GET info-text
 GET http://localhost:8080/api/info
+
+### PUT - Objekt vollständig ersetzen
+PUT http://localhost:8080/api/tracked-objects/1
+Content-Type: application/json
+
+{
+  "name": "2024 YR4 (revised)",
+  "estimatedDiameterKm": 0.098,
+  "potentiallyHazardous": true,
+  "closeApproachDate": "2032-12-24",
+  "missDistanceKm": 3100000.0
+}
+
+### POST - neues Objekt anlegen
+POST http://localhost:8080/api/tracked-objects
+Content-Type: application/json
+
+{
+  "name": "Eros",
+  "estimatedDiameterKm": 16.34,
+  "potentiallyHazardous": false,
+  "closeApproachDate": "2065-10-25",
+  "missDistanceKm": 26000000.0
+}
+
+### DELETE
+DELETE http://localhost:8080/api/tracked-objects/2
