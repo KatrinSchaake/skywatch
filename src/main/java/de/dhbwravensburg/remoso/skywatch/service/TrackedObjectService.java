@@ -7,55 +7,46 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.springframework.stereotype.Service;
 import de.dhbwravensburg.remoso.skywatch.model.TrackedObject;
+import de.dhbwravensburg.remoso.skywatch.repository.TrackedObjectRepository;
+import lombok.AllArgsConstructor;
 
 /**
- * Katrin Schaake, TIA25, Donnerstag, 07.05.2026, Version: 0.1
+ * Katrin Schaake, TIA25, Montag, 11.05.2026, Version: 0.2
  *
  * Service: arbeitet nur mit dem TrackedObject (kein HTTP im Service)
+ * repository statt store
  */
 
 @Service //Spring-Magie:
 public class TrackedObjectService {
 
-	private final ConcurrentHashMap<Long, TrackedObject> store = new ConcurrentHashMap<>();
-	private final AtomicLong idGenerator = new AtomicLong(1); //eindeutige ID über die Laufzeit
+	private final TrackedObjectRepository repository;
 
-	//constructor - diesmal selbst, weil was spezielles vor ...
-	public TrackedObjectService(){
-		// seed data for development
-		create(new TrackedObject(
-				null,"2024 YR4",0.07, false,
-				"2032-12-22", 200_000.0));
-		create(new TrackedObject(null, "99942 Apophis", 0.37, true,
-				"2029-04-13", 31_000.0));
-		create(new TrackedObject(null, "Bennu",
-				0.49, true,
-				"2182-09-25", 750_000.0));
+	public TrackedObjectService(TrackedObjectRepository repository) {
+		this.repository = repository;
 	}
 
 	public List<TrackedObject> findAll() {
-		return List.copyOf(store.values());
+		return this.repository.findAll();
 	}
 
-	//man bekommt ein Objekt zurück, dass entweder null oder ben ein TrackedObject im Bauch hat
 	public Optional<TrackedObject> findById(Long id) {
-		return Optional.ofNullable(store.get(id));
+		return this.repository.findById(id);
 	}
 
 	public TrackedObject create(TrackedObject entity){
-		Long newId = idGenerator.getAndIncrement(); //eine neue ID und plus 1 gerechnet
-		entity.setId(newId);
-		store.put(newId, entity);
-		return entity;
+		return repository.save(entity);
 	}
 
-	public Optional<TrackedObject> update(Long id, TrackedObject entity){
-		if (!store.containsKey(id)){
-			return Optional.empty(); // wenn ID noch nicht existiert, dann macht Cotroller eine 404 daraus
-		}
-		entity.setId(id);
-		store.put(id, entity);
-		return Optional.of(entity);
+	public Optional<TrackedObject> update(Long id, TrackedObject updated){
+		return repository.findById(id).map(existing -> {
+			existing.setName(updated.getName());
+			existing.setEstimatedDiameterKm(updated.getEstimatedDiameterKm());
+			existing.setPotentiallyHazardous(updated.isPotentiallyHazardous());
+			existing.setCloseApproachDate(updated.getCloseApproachDate());
+			existing.setMissDistanceKm(updated.getMissDistanceKm());
+			return repository.save(existing);
+		});
 	}
 
 	public Optional<TrackedObject> toggleHazardous(Long id) {
@@ -65,11 +56,16 @@ public class TrackedObjectService {
 		}
 		TrackedObject entity = existing.get();
 		entity.setPotentiallyHazardous(!entity.isPotentiallyHazardous());  // das ist der Toggle "!"
-		store.put(id, entity);		// speichern (technisch nicht notwendig, aber sicherer)
-		return Optional.of(entity);
+		TrackedObject saved = repository.save(entity);
+		return Optional.of(saved);
 	}
 
 	public boolean delete(Long id){
-		return store.remove(id) != null;
+
+		if (!repository.existsById(id)){
+			return false;
+		}
+		repository.deleteById(id);
+		return true;
 	}
 }
