@@ -3,6 +3,7 @@ package de.dhbwravensburg.remoso.skywatch.controller;
 import java.net.URI;
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import de.dhbwravensburg.remoso.skywatch.dto.TrackedObjectRequest;
@@ -20,6 +22,9 @@ import de.dhbwravensburg.remoso.skywatch.dto.TrackedObjectResponse;
 import de.dhbwravensburg.remoso.skywatch.mapper.TrackedObjectMapper;
 import de.dhbwravensburg.remoso.skywatch.model.TrackedObject;
 import de.dhbwravensburg.remoso.skywatch.service.TrackedObjectService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import jakarta.validation.Valid;
 
 /**
  * Katrin Schaake, TIA25, Sonnabend, 09.05.2026, Version: 0.2
@@ -36,75 +41,77 @@ public class TrackedObjectController {
 	}
 
 	@GetMapping
-	public List<TrackedObjectResponse> getAll(
-			@RequestParam(required = false) Boolean hazardous) { // um optionale Abfrage (un)gefährliche erweitert
-
+	public List<TrackedObjectResponse> getAll() {
 		return service.findAll().stream()
-				.filter(entity -> hazardous == null || entity.isPotentiallyHazardous() == hazardous)
 				.map(TrackedObjectMapper::toResponse)
 				.toList();
 	}
 
-	@GetMapping("/{id}") // @PathVariable holt Wert aus URL - GET /api/tracked-objects/42
-							// -> @PathVariable Long id ergibt id =42
-	public ResponseEntity<TrackedObjectResponse> getById(@PathVariable Long id) {
-		return service.findById(id)
+	// GET /api/tracked-objects/large?minSize=0.3 bzw. /api/tracked-object/large mit > 0.3km
+	@GetMapping("/large")
+	public List<TrackedObjectResponse> getLarge(
+			@RequestParam(defaultValue = "0.3") double minSize) {
+		return service.findLargerThan(minSize).stream()
 				.map(TrackedObjectMapper::toResponse)
-				.map(ResponseEntity::ok) // wenn was drin ist, pack es in ResponseEntity.ok(...) =200 OK, wenn leer, bleib leer
-				.orElse(ResponseEntity.notFound().build()); // wenn am Ende immernoch leer, gib 404 zurück
+				.toList();
 	}
 
+	@GetMapping("/{id}")
+	public TrackedObjectResponse getById(@PathVariable Long id) {
+		return TrackedObjectMapper.toResponse(service.getOrThrow(id));
+	}
+
+	@Operation(summary = "Create a new tracked object")
+	@ApiResponse(responseCode = "201", description = "Created")
+	@ApiResponse(responseCode = "400", description = "Validation failed")
 	@PostMapping
 	public ResponseEntity<TrackedObjectResponse> create(
-			@RequestBody TrackedObjectRequest request) { //JSON-Body in Java-Objekt - Spring-Magie
+			@Valid @RequestBody TrackedObjectRequest request) {
 
-		TrackedObject created = service.create(
-				TrackedObjectMapper.toEntity(null, request));
-
+		TrackedObject created = service.create(TrackedObjectMapper.toEntity(null, request));
 		TrackedObjectResponse response = TrackedObjectMapper.toResponse(created);
-
-		return ResponseEntity // setzt Statuscode 201 Created und den Location-Header
+		return ResponseEntity 					// setzt Statuscode 201 Created und den Location-Header
 				.created(URI.create("/api/tracked-objects/" + created.getId()))
-				.body(response); // packt das Response-DTO als JSON in den Body
+				.body(response); 				// packt das Response-DTO als JSON in den Body
 	}
 
 	@PutMapping("/{id}")
 	public ResponseEntity<TrackedObjectResponse> update(
 			@PathVariable Long id,
-			@RequestBody TrackedObjectRequest request) {
+			@Valid @RequestBody TrackedObjectRequest request) {
 
-		return service.update(id, TrackedObjectMapper.toEntity(id, request))
-				.map(TrackedObjectMapper::toResponse)
-				.map(ResponseEntity::ok)
-				.orElse(ResponseEntity.notFound().build());
+		TrackedObject updated = service.update(id, TrackedObjectMapper.toEntity(id, request));
+		return ResponseEntity.ok(TrackedObjectMapper.toResponse(updated));
 	}
 
 	@DeleteMapping("/{id}")
-	public ResponseEntity<Void> delete(@PathVariable Long id) {
-		if (service.delete(id)) {
-			return ResponseEntity.noContent().build(); // 204
-		}
-		return ResponseEntity.notFound().build(); // 404
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	public void delete(@PathVariable Long id) {
+		service.delete(id);
 	}
 
 	@GetMapping("/hazardous")
 	public List<TrackedObjectResponse> getHazardous() {
-		return service.findAll().stream()
-				.filter(TrackedObject::isPotentiallyHazardous)
+		return service.findHazardous().stream()
 				.map(TrackedObjectMapper::toResponse)
 				.toList();
 	}
 
 	@PatchMapping("/{id}/hazardous")
 	public ResponseEntity<TrackedObjectResponse> toggleHazardous(@PathVariable Long id) {
-		return service.toggleHazardous(id)
+		TrackedObject updated = service.toggleHazardous(id);
+		return ResponseEntity.ok(TrackedObjectMapper.toResponse(updated));
+	}
+
+	@GetMapping("/search")
+	public List<TrackedObjectResponse> search(@RequestParam String name) {
+		return service.searchByName(name).stream()
 				.map(TrackedObjectMapper::toResponse)
-				.map(ResponseEntity::ok)
-				.orElse(ResponseEntity.notFound().build());
+				.toList();
 	}
 
 	@GetMapping("/count")
-	public int getCount() {
-		return service.findAll().size();
+	public long getCount() {
+		return service.count();
 	}
 }

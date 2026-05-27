@@ -21,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RestControllerAdvice
-public class GlobalExceptHandler {
+public class GlobalExceptionHandler {
 
 	/**
 	 * 404 - Ressource nicht gefunden
@@ -71,16 +71,14 @@ public class GlobalExceptHandler {
 	 * 500 - Fallback für alle anderen unerwarteten Fehler
 	 */
 	@ExceptionHandler(Exception.class)
-	public ProblemDetail handleAnyOther(Exception ex) {
+	public ResponseEntity<ProblemDetail> handleAnyOther(Exception ex) {
 
 		log.error("Unexpected server error", ex);
 
 		ProblemDetail problem = ProblemDetail.forStatusAndDetail(
 				HttpStatus.INTERNAL_SERVER_ERROR, "Unexcepted server error");
 		problem.setTitle("Internal server error");
-				"..."
-		);
-		settitle
+		problem.setProperty("error", ex.getClass().getSimpleName());
 
 		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(problem);
 

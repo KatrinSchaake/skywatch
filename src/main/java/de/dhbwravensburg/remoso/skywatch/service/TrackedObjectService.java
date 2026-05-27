@@ -2,16 +2,15 @@ package de.dhbwravensburg.remoso.skywatch.service;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.springframework.stereotype.Service;
+
+import de.dhbwravensburg.remoso.skywatch.exception.TrackedObjectNotFoundException;
 import de.dhbwravensburg.remoso.skywatch.model.TrackedObject;
 import de.dhbwravensburg.remoso.skywatch.repository.TrackedObjectRepository;
-import lombok.AllArgsConstructor;
 
 /**
- * Katrin Schaake, TIA25, Montag, 11.05.2026, Version: 0.2
+ * Katrin Schaake, TIA25, Montag, 11.05.2026, Version: 0.3
  *
  * Service: arbeitet nur mit dem TrackedObject (kein HTTP im Service)
  * repository statt store
@@ -34,38 +33,52 @@ public class TrackedObjectService {
 		return this.repository.findById(id);
 	}
 
+	public List<TrackedObject> findHazardous() {
+		return repository.findByPotentiallyHazardous(true);
+	}
+
+	public List<TrackedObject> findLargerThan(double minSizeKm) {
+		return repository.findLargerThan(minSizeKm);
+	}
+
 	public TrackedObject create(TrackedObject entity){
 		return repository.save(entity);
 	}
 
-	public Optional<TrackedObject> update(Long id, TrackedObject updated){
-		return repository.findById(id).map(existing -> {
-			existing.setName(updated.getName());
-			existing.setEstimatedDiameterKm(updated.getEstimatedDiameterKm());
-			existing.setPotentiallyHazardous(updated.isPotentiallyHazardous());
-			existing.setCloseApproachDate(updated.getCloseApproachDate());
-			existing.setMissDistanceKm(updated.getMissDistanceKm());
-			return repository.save(existing);
-		});
+	public TrackedObject getOrThrow(Long id) {
+		return repository.findById(id)
+				.orElseThrow(() -> new TrackedObjectNotFoundException(id));
 	}
 
-	public Optional<TrackedObject> toggleHazardous(Long id) {
-		Optional<TrackedObject> existing = findById(id);
-		if (existing.isEmpty()){
-			return Optional.empty();
-		}
-		TrackedObject entity = existing.get();
+	public TrackedObject update(Long id, TrackedObject updated){
+		TrackedObject existing = getOrThrow(id);
+		existing.setName(updated.getName());
+		existing.setEstimatedDiameterKm(updated.getEstimatedDiameterKm());
+		existing.setPotentiallyHazardous(updated.isPotentiallyHazardous());
+		existing.setCloseApproachDate(updated.getCloseApproachDate());
+		existing.setMissDistanceKm(updated.getMissDistanceKm());
+		return repository.save(existing);
+	}
+
+	public TrackedObject toggleHazardous(Long id) {
+		TrackedObject entity = getOrThrow(id);
 		entity.setPotentiallyHazardous(!entity.isPotentiallyHazardous());  // das ist der Toggle "!"
-		TrackedObject saved = repository.save(entity);
-		return Optional.of(saved);
+		return repository.save(entity);
 	}
 
-	public boolean delete(Long id){
+	public List<TrackedObject> searchByName(String namePart) {
+		return repository.findByNameContainingIgnoreCase(namePart);
+	}
+
+	public long count() {
+		return repository.count();
+	}
+
+	public void delete(Long id){
 
 		if (!repository.existsById(id)){
-			return false;
+			throw new TrackedObjectNotFoundException(id);
 		}
 		repository.deleteById(id);
-		return true;
 	}
 }
