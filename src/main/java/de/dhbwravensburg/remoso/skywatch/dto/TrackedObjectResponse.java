@@ -13,6 +13,6 @@ public record TrackedObjectResponse(
 		String name,
 		double estimatedDiameterKm,
 		boolean potentiallyHazardous,
-		String closeApproachData,
+		String closeApproachDate,
 		double missDistanceKm
 ){}
