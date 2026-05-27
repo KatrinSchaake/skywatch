@@ -10,5 +10,5 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
  */
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record NeoFeddResponse(int element_count,
+public record NeoFeedResponse(int element_count,
 		Map<String, List<NeoObject>> near_earth_objects) {}

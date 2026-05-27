@@ -60,3 +60,87 @@ PATCH http://localhost:8080/api/tracked-objects/1/hazardous
 
 ### PATCH - Hazardous-Status umschalten (2. Aufruf)
 PATCH http://localhost:8080/api/tracked-objects/1/hazardous
+
+
+### GET hazardous: nur gefährliche Objekte (eigener Pfad)
+GET http://localhost:8080/api/tracked-objects/hazardous
+
+### SEARCH: Namen mit "apo" (case-insensitive, sollte Apophis finden)
+GET http://localhost:8080/api/tracked-objects/search?name=apo
+
+### SEARCH: Namen mit "BENNU" (sollte trotzdem Bennu finden - IgnoreCase!)
+GET http://localhost:8080/api/tracked-objects/search?name=BENNU
+
+### SEARCH: ungültiger Name (sollte leere Liste zurückgeben, 200 OK)
+GET http://localhost:8080/api/tracked-objects/search?name=xxxxxxx
+
+### SEARCH: ohne Parameter -> 400 Bad Request
+GET http://localhost:8080/api/tracked-objects/search
+
+
+### GET large: Asteroiden mit Durchmesser > 0.3 km
+GET http://localhost:8080/api/tracked-objects/large
+
+###############################
+### Observations (1:n)
+###############################
+
+### GET alle Beobachtungen für Apophis (id=2)
+GET http://localhost:8080/api/tracked-objects/2/observations
+
+### POST: erste Beobachtung für Apophis anlegen
+POST http://localhost:8080/api/tracked-objects/2/observations
+Content-Type: application/json
+
+{
+  "observerName": "Katrin Schaake",
+  "observedAt": "2029-04-13T22:00:00",
+  "location": "Ravensburg",
+  "notes": "Sehr heller Durchgang, mit bloßem Auge sichtbar"
+}
+
+### POST: zweite Beobachtung für Apophis
+POST http://localhost:8080/api/tracked-objects/2/observations
+Content-Type: application/json
+
+{
+  "observerName": "Max Mustermann",
+  "observedAt": "2029-04-14T23:15:00",
+  "location": "München",
+  "notes": "Leicht bewölkt, aber gut erkennbar"
+}
+
+### GET wieder: jetzt sollten 2 Beobachtungen da sein
+GET http://localhost:8080/api/tracked-objects/2/observations
+
+### POST: Parent existiert nicht -> 404
+POST http://localhost:8080/api/tracked-objects/9999/observations
+Content-Type: application/json
+
+{
+  "observerName": "Test",
+  "observedAt": "2029-01-01T10:00:00",
+  "location": "Nirgendwo",
+  "notes": "Sollte 404 sein"
+}
+
+### POST: 400 Bad Request + fieldErrors im Body
+POST http://localhost:8080/api/tracked-objects
+Content-Type: application/json
+
+{
+"name": "",
+"estimatedDiameterKm": 0,
+"potentiallyHazardous": false,
+"closeApproachDate": "abc",
+"missDistanceKm": -100
+}
+
+### DELETE auf nicht existierender ID - 404 not found
+DELETE http://localhost:8080/api/tracked-objects/9999
+
+### NASA Test GET
+GET localhost:8080/api/neo/today
+
+### NASA Test Import (macht man sonst nicht!)
+POST localhost:8080/api/neo/import
